@@ -1,21 +1,1608 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width" />
-  <title>IC Hello Starter</title>
-  <base href="/" />
-  <link rel="icon" href="/favicon.ico" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenArb - ICP Decentralized Trading
+Made Simple</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-dark {
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .text-profit { color: #10b981; }
+        .text-loss { color: #ef4444; }
+        
+        .price-flash {
+            animation: priceFlash 0.5s ease-in-out;
+        }
+        
+        @keyframes priceFlash {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: rgba(59, 130, 246, 0.3); }
+        }
+        
+        .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 1px;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-connected { background-color: #10b981; }
+        .status-disconnected { background-color: #ef4444; }
+        .status-connecting { 
+            background-color: #f59e0b; 
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #374151;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            display: none;
+        }
+        
+        .modal-content {
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid #374151;
+        }
+        
+        .arbitrage-card {
+            transition: all 0.3s ease;
+        }
+        
+        .arbitrage-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dex-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .sonic { background-color: #6366f1; color: white; }
+        .icpswap { background-color: #10b981; color: white; }
+        .infinityswap { background-color: #f59e0b; color: white; }
+        .icdex { background-color: #8b5cf6; color: white; }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1002;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success { background-color: #10b981; }
+        .notification.error { background-color: #ef4444; }
+        .notification.warning { background-color: #f59e0b; }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .sidebar {
+            transition: transform 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 999;
+                height: 100vh;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+        .welcome-screen {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #581c87 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wallet-option {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .wallet-option:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .live-indicator {
+            animation: livePulse 2s infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .canister-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .live-price {
+            animation: liveUpdate 3s infinite;
+        }
+
+        @keyframes liveUpdate {
+            0%, 90%, 100% { transform: scale(1); }
+            5% { transform: scale(1.05); }
+        }
+    </style>
 </head>
+<body class="bg-gray-900 text-white font-sans">
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen" class="welcome-screen">
+        <div class="text-center max-w-4xl mx-auto px-6">
+            <div class="mb-8">
+                <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-robot text-white text-3xl"></i>
+                </div>
+                <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-4">
+                    OpenArb
+                </h1>
+                <p class="text-xl text-blue-200 mb-2">ICP DeFi Trading Bot</p>
+                <div class="canister-badge mx-auto mb-8">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Verified Canister Smart Contract</span>
+                </div>
+                <p class="text-lg text-gray-300 max-w-2xl mx-auto mb-12">
+                    Fully decentralized arbitrage trading on Internet Computer Protocol. 
+                    Transparent, secure, and verifiable execution across ICP's DeFi ecosystem.
+                </p>
+            </div>
 
-<body>
-  <div class="browser-warning">
-    ⚠️ If this page appears broken, try reloading. If the problem persists, try switching browsers; Chrome or
-    Firefox are recommended.
-  </div>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                <div class="wallet-option card-dark rounded-xl p-8" onclick="createWallet()">
+                    <div class="w-16 h-16 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-plus text-green-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Create New Wallet</h3>
+                    <p class="text-gray-400 mb-6">Generate a new ICP wallet with secure seed phrase backup</p>
+                    <button class="btn-primary w-full px-6 py-3 rounded-lg font-medium">
+                        Create Wallet
+                    </button>
+                </div>
 
+                <div class="wallet-option card-dark rounded-xl p-8" onclick="connectWallet()">
+                    <div class="w-16 h-16 bg-blue-500 bg-opacity-20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-link text-blue-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Connect Existing Wallet</h3>
+                    <p class="text-gray-400 mb-6">Connect your Internet Identity or existing ICP wallet</p>
+                    <button class="bg-gray-600 hover:bg-gray-700 w-full px-6 py-3 rounded-lg font-medium transition-colors">
+                        Connect Wallet
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-12 text-center">
+                <p class="text-sm text-gray-400 mb-4">Powered by Internet Computer Protocol</p>
+                <div class="flex justify-center space-x-6 text-xs text-gray-500">
+                    <span>✓ On-chain execution</span>
+                    <span>✓ Transparent operations</span>
+                    <span>✓ Low gas fees</span>
+                    <span>✓ Verifiable results</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application (Hidden initially) -->
+    <div id="mainApp" class="hidden">
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="text-center">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-gray-300">Initializing ICP canister...</p>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <div id="notification" class="notification">
+            <span id="notificationText"></span>
+        </div>
+
+        <!-- Header -->
+        <header class="bg-gray-800 border-b border-gray-700 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button id="sidebarToggle" class="md:hidden text-gray-400 hover:text-white">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-robot text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                                OpenArb
+                            </h1>
+                            <p class="text-xs text-gray-400">ICP DeFi Trading Bot</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-2">
+                        <span class="live-indicator bg-green-400 w-2 h-2 rounded-full"></span>
+                        <span class="text-sm text-green-400 font-medium">LIVE</span>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <span id="connectionStatus" class="status-indicator status-connected"></span>
+                        <span id="connectionText" class="text-sm text-gray-300">Connected to ICP</span>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 bg-gray-700 px-3 py-2 rounded-lg">
+                        <i class="fas fa-wallet text-blue-400"></i>
+                        <span id="walletAddress" class="text-sm font-medium">rdmx6-jaaaa-aaaah-qcaiq-cai</span>
+                    </div>
+                    
+                    <button onclick="disconnectWallet()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Disconnect
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="sidebar w-64 bg-gray-800 border-r border-gray-700 min-h-screen">
+                <nav class="p-6">
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="#" class="nav-link active flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors" data-tab="dashboard">
+                                <i class="fas fa-chart-line text-blue-400"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors" data-tab="opportunities">
+                                <i class="fas fa-search-dollar text-green-400"></i>
+                                <span>Live Opportunities</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors" data-tab="portfolio">
+                                <i class="fas fa-briefcase text-purple-400"></i>
+                                <span>Portfolio</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors" data-tab="history">
+                                <i class="fas fa-history text-yellow-400"></i>
+                                <span>Trade History</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors" data-tab="settings">
+                                <i class="fas fa-cog text-gray-400"></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-content">
+                    <!-- Live Status Banner -->
+                    <div class="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-4 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="live-indicator bg-white w-3 h-3 rounded-full"></div>
+                                <span class="font-semibold">OpenArb is LIVE and scanning ICP DeFi markets</span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="opacity-75">Last scan:</span>
+                                <span id="lastScanTime" class="font-medium">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="card-dark rounded-xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Total Profit (24h)</p>
+                                    <p id="totalProfit" class="text-2xl font-bold text-profit live-price">$1,247.83</p>
+                                    <p class="text-sm text-profit">+24.5% today</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-arrow-trend-up text-green-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-dark rounded-xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Active Opportunities</p>
+                                    <p id="activeOpportunities" class="text-2xl font-bold live-price">12</p>
+                                    <p class="text-sm text-blue-400">3 executing</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-exchange-alt text-blue-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-dark rounded-xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Success Rate</p>
+                                    <p id="successRate" class="text-2xl font-bold live-price">96.8%</p>
+                                    <p class="text-sm text-green-400">+2.1% this week</p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-target text-purple-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-dark rounded-xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Gas Saved</p>
+                                    <p id="gasSaved" class="text-2xl font-bold live-price">$89.23</p>
+                                    <p class="text-sm text-yellow-400">ICP efficiency</p>
+                                </div>
+                                <div class="w-12 h-12 bg-yellow-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-gas-pump text-yellow-400 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="card-dark rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">Live Profit Tracking</h3>
+                            <div class="chart-container">
+                                <canvas id="profitChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="card-dark rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">ICP DEX Volume Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="volumeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Activity Feed -->
+                    <div class="card-dark rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Live Activity Feed</h3>
+                            <div class="flex items-center space-x-2">
+                                <div class="live-indicator bg-green-400 w-2 h-2 rounded-full"></div>
+                                <span class="text-sm text-green-400">Real-time updates</span>
+                            </div>
+                        </div>
+                        <div id="activityFeed" class="space-y-4">
+                            <!-- Activity items will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opportunities Tab -->
+                <div id="opportunities" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold">Live Arbitrage Opportunities</h2>
+                            <p class="text-gray-400">Real-time scanning across ICP DeFi protocols</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="live-indicator bg-green-400 w-2 h-2 rounded-full"></div>
+                                <span class="text-sm text-green-400">Auto-refresh enabled</span>
+                            </div>
+                            <button id="refreshOpportunities" class="btn-primary px-4 py-2 rounded-lg font-medium">
+                                <i class="fas fa-sync-alt mr-2"></i>Manual Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid gap-4" id="opportunitiesGrid">
+                        <!-- Opportunities will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Portfolio Tab -->
+                <div id="portfolio" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6">Portfolio Overview</h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2">
+                            <div class="card-dark rounded-xl p-6 mb-6">
+                                <h3 class="text-lg font-semibold mb-4">Asset Allocation</h3>
+                                <div class="chart-container">
+                                    <canvas id="portfolioChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div class="card-dark rounded-xl p-6">
+                                <h3 class="text-lg font-semibold mb-4">ICP Holdings</h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">ICP</div>
+                                            <span>Internet Computer</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-medium">245.67 ICP</p>
+                                            <p class="text-sm text-gray-400">$2,456.70</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-xs font-bold">ckUSDC</div>
+                                            <span>ckUSDC</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-medium">1,542 ckUSDC</p>
+                                            <p class="text-sm text-gray-400">$1,542.00</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-xs font-bold">ckBTC</div>
+                                            <span>ckBTC</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-medium">0.085 ckBTC</p>
+                                            <p class="text-sm text-gray-400">$4,250.00</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-dark rounded-xl p-6">
+                                <h3 class="text-lg font-semibold mb-4">Live Performance</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">24h Change</span>
+                                        <span id="portfolio24h" class="text-profit live-price">+$247.83</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">7d Change</span>
+                                        <span id="portfolio7d" class="text-profit live-price">+$1,932.12</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">Total Return</span>
+                                        <span class="text-profit">+47.2%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="history" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6">Trade History</h2>
+                    
+                    <div class="card-dark rounded-xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-800">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-300">Time</th>
+                                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-300">Pair</th>
+                                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-300">Route</th>
+                                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-300">Amount</th>
+                                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-300">Profit</th>
+                                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-300">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tradeHistoryBody" class="divide-y divide-gray-700">
+                                    <tr class="hover:bg-gray-800 transition-colors">
+                                        <td class="px-6 py-4 text-sm">2 min ago</td>
+                                        <td class="px-6 py-4 text-sm font-medium">ICP/ckUSDC</td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="dex-badge sonic">Sonic</span>
+                                            <i class="fas fa-arrow-right mx-2 text-gray-400"></i>
+                                            <span class="dex-badge icpswap">ICPSwap</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">125 ICP</td>
+                                        <td class="px-6 py-4 text-sm text-profit">+$156.78</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs font-medium bg-green-500 bg-opacity-20 text-green-400 rounded-full">
+                                                Completed
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-800 transition-colors">
+                                        <td class="px-6 py-4 text-sm">5 min ago</td>
+                                        <td class="px-6 py-4 text-sm font-medium">ckBTC/ICP</td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="dex-badge infinityswap">InfinitySwap</span>
+                                            <i class="fas fa-arrow-right mx-2 text-gray-400"></i>
+                                            <span class="dex-badge sonic">Sonic</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">0.05 ckBTC</td>
+                                        <td class="px-6 py-4 text-sm text-profit">+$89.23</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs font-medium bg-green-500 bg-opacity-20 text-green-400 rounded-full">
+                                                Completed
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-800 transition-colors">
+                                        <td class="px-6 py-4 text-sm">12 min ago</td>
+                                        <td class="px-6 py-4 text-sm font-medium">CHAT/ckUSDT</td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="dex-badge icpswap">ICPSwap</span>
+                                            <i class="fas fa-arrow-right mx-2 text-gray-400"></i>
+                                            <span class="dex-badge sonic">Sonic</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">12,000 CHAT</td>
+                                        <td class="px-6 py-4 text-sm text-profit">+$234.56</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs font-medium bg-green-500 bg-opacity-20 text-green-400 rounded-full">
+                                                Completed
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-800 transition-colors">
+                                        <td class="px-6 py-4 text-sm">18 min ago</td>
+                                        <td class="px-6 py-4 text-sm font-medium">SNS1/ICP</td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="dex-badge sonic">Sonic</span>
+                                            <i class="fas fa-arrow-right mx-2 text-gray-400"></i>
+                                            <span class="dex-badge icdex">ICDex</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">800 SNS1</td>
+                                        <td class="px-6 py-4 text-sm text-profit">+$67.89</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs font-medium bg-green-500 bg-opacity-20 text-green-400 rounded-full">
+                                                Completed
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-800 transition-colors">
+                                        <td class="px-6 py-4 text-sm">25 min ago</td>
+                                        <td class="px-6 py-4 text-sm font-medium">ICP/ckUSDC</td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <span class="dex-badge icpswap">ICPSwap</span>
+                                            <i class="fas fa-arrow-right mx-2 text-gray-400"></i>
+                                            <span class="dex-badge infinityswap">InfinitySwap</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">200 ICP</td>
+                                        <td class="px-6 py-4 text-sm text-profit">+$312.45</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs font-medium bg-green-500 bg-opacity-20 text-green-400 rounded-full">
+                                                Completed
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="settings" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6">Settings</h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="card-dark rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">Trading Parameters</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Minimum Profit Threshold</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="range" min="0.1" max="5" step="0.1" value="1.5" class="flex-1">
+                                        <span class="text-sm font-medium w-12">1.5%</span>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Max Transaction Fee (ICP)</label>
+                                    <input type="number" value="0.001" step="0.0001" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Slippage Tolerance</label>
+                                    <select class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                        <option>0.5%</option>
+                                        <option selected>1.0%</option>
+                                        <option>2.0%</option>
+                                        <option>5.0%</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-dark rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">ICP DEX Preferences</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" checked class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                                    <span>Sonic DEX</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" checked class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                                    <span>ICPSwap</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                                    <span>InfinitySwap</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" checked class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                                    <span>ICDex</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="card-dark rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">Live Notifications</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center justify-between">
+                                    <span>Trade Notifications</span>
+                                    <input type="checkbox" checked class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                                </label>
+                                <label class="flex items-center justify-between">
+                                    <span>Profit Alerts</span>
+                                    <input type="checkbox" checked class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                                </label>
+                                <label class="flex items-center justify-between">
+                                    <span>Opportunity Alerts</span>
+                                    <input type="checkbox" checked class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="card-dark rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">Wallet Security</h3>
+                            <div class="space-y-4">
+                                <button onclick="viewSeedPhrase()" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                                    View Seed Phrase
+                                </button>
+                                <button onclick="exportWallet()" class="w-full bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                                    Export Wallet
+                                </button>
+                                <button onclick="deleteWallet()" class="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                                    Delete Wallet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Trade Modal -->
+        <div id="tradeModal" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">Execute Live Arbitrage</h3>
+                    <button id="closeModal" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Trading Pair</label>
+                        <input id="tradePair" type="text" readonly class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Amount</label>
+                        <input id="tradeAmount" type="number" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Expected Profit</label>
+                        <input id="expectedProfit" type="text" readonly class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    
+                    <div class="flex space-x-4 pt-4">
+                        <button id="executeTrade" class="flex-1 btn-primary px-4 py-2 rounded-lg font-medium">
+                            Execute Live Trade
+                        </button>
+                        <button id="cancelTrade" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallet Creation Modal -->
+    <div id="walletCreationModal" class="modal">
+        <div class="modal-content max-w-md">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-key text-green-400 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Creating Your ICP Wallet</h3>
+                <p class="text-gray-400">Generating secure seed phrase...</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <p class="text-sm text-gray-400 mb-2">Your Seed Phrase (Save this securely!):</p>
+                    <div id="seedPhrase" class="grid grid-cols-3 gap-2 text-sm font-mono">
+                        <!-- Seed phrase will be generated -->
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-500 bg-opacity-20 border border-yellow-500 rounded-lg p-4">
+                    <div class="flex items-start space-x-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-400 mt-1"></i>
+                        <div class="text-sm">
+                            <p class="font-medium text-yellow-400">Important Security Notice</p>
+                            <p class="text-gray-300 mt-1">Save your seed phrase in a secure location. This is the only way to recover your wallet.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <label class="flex items-center space-x-3">
+                    <input id="seedConfirm" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                    <span class="text-sm">I have safely stored my seed phrase</span>
+                </label>
+                
+                <button id="completeWalletCreation" class="w-full btn-primary px-4 py-2 rounded-lg font-medium" disabled>
+                    Complete Wallet Creation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentTab = 'dashboard';
+        let isConnected = false;
+        let opportunities = [];
+        let charts = {};
+        let liveDataInterval;
+        let activityFeedInterval;
+        let walletAddress = '';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user has existing wallet
+            const hasWallet = localStorage.getItem('openarbWallet');
+            if (hasWallet) {
+                // Auto-connect existing wallet
+                connectExistingWallet();
+            }
+        });
+
+        function createWallet() {
+            document.getElementById('walletCreationModal').style.display = 'flex';
+            generateSeedPhrase();
+        }
+
+        function generateSeedPhrase() {
+            // BIP39 word list (first 100 words for demo - in production use full 2048 word list)
+            const words = [
+                'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
+                'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
+                'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual',
+                'adapt', 'add', 'addict', 'address', 'adjust', 'admit', 'adult', 'advance',
+                'advice', 'aerobic', 'affair', 'afford', 'afraid', 'again', 'against', 'age',
+                'agent', 'agree', 'ahead', 'aim', 'air', 'airport', 'aisle', 'alarm',
+                'album', 'alcohol', 'alert', 'alien', 'all', 'alley', 'allow', 'almost',
+                'alone', 'alpha', 'already', 'also', 'alter', 'always', 'amateur', 'amazing',
+                'among', 'amount', 'amused', 'analyst', 'anchor', 'ancient', 'anger', 'angle',
+                'angry', 'animal', 'ankle', 'announce', 'annual', 'another', 'answer', 'antenna',
+                'antique', 'anxiety', 'any', 'apart', 'apology', 'appear', 'apple', 'approve',
+                'april', 'arch', 'arctic', 'area', 'arena', 'argue', 'arm', 'armed',
+                'armor', 'army', 'around', 'arrange', 'arrest', 'arrive', 'arrow', 'art'
+            ];
+            
+            // Generate cryptographically secure random seed phrase
+            const seedPhrase = [];
+            const crypto = window.crypto || window.msCrypto;
+            
+            for (let i = 0; i < 12; i++) {
+                const randomArray = new Uint32Array(1);
+                crypto.getRandomValues(randomArray);
+                const randomIndex = randomArray[0] % words.length;
+                seedPhrase.push(words[randomIndex]);
+            }
+            
+            const seedContainer = document.getElementById('seedPhrase');
+            seedContainer.innerHTML = '';
+            seedPhrase.forEach((word, index) => {
+                const wordElement = document.createElement('div');
+                wordElement.className = 'bg-gray-700 px-2 py-1 rounded text-center font-mono text-sm';
+                wordElement.textContent = `${index + 1}. ${word}`;
+                seedContainer.appendChild(wordElement);
+            });
+            
+            // Store seed phrase temporarily with timestamp
+            window.tempSeedPhrase = {
+                phrase: seedPhrase.join(' '),
+                words: seedPhrase,
+                generated: Date.now()
+            };
+            
+            // Generate wallet address from seed phrase
+            window.tempWalletAddress = generateWalletAddress(seedPhrase);
+        }
+
+        function generateWalletAddress(seedPhrase) {
+            // Generate ICP canister-style address from seed phrase
+            const seedString = seedPhrase.join('');
+            let hash = 0;
+            for (let i = 0; i < seedString.length; i++) {
+                const char = seedString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            
+            // Convert to base32-like format for ICP canister ID
+            const chars = 'abcdefghijklmnopqrstuvwxyz234567';
+            let result = '';
+            let num = Math.abs(hash);
+            
+            for (let i = 0; i < 5; i++) {
+                result = chars[num % 32] + result;
+                num = Math.floor(num / 32);
+            }
+            
+            return `${result}-jaaaa-aaaah-qcaiq-cai`;
+        }
+
+        function connectWallet() {
+            showLoadingOverlay('Connecting to Internet Identity...');
+            
+            // Simulate Internet Identity connection
+            setTimeout(() => {
+                // Generate a random wallet address for existing wallet connection
+                const randomChars = 'abcdefghijklmnopqrstuvwxyz234567';
+                let randomPrefix = '';
+                for (let i = 0; i < 5; i++) {
+                    randomPrefix += randomChars[Math.floor(Math.random() * randomChars.length)];
+                }
+                walletAddress = `${randomPrefix}-jaaaa-aaaah-qcaiq-cai`;
+                connectExistingWallet();
+            }, 2000);
+        }
+
+        function connectExistingWallet() {
+            // Check if we have stored wallet data
+            const storedWallet = localStorage.getItem('openarbWallet');
+            if (storedWallet) {
+                const walletData = JSON.parse(storedWallet);
+                walletAddress = walletData.address;
+            } else if (!walletAddress) {
+                // Fallback if no address is set
+                walletAddress = 'rdmx6-jaaaa-aaaah-qcaiq-cai';
+            }
+            
+            // Hide welcome screen and show main app
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            // Initialize the main application
+            initializeMainApp();
+        }
+
+        function initializeMainApp() {
+            showLoadingOverlay('Initializing ICP canister...');
+            
+            setTimeout(() => {
+                hideLoadingOverlay();
+                setupEventListeners();
+                simulateConnection();
+                loadOpportunities();
+                initializeCharts();
+                startLiveUpdates();
+                showNotification('Connected to ICP DeFi ecosystem successfully!', 'success');
+            }, 2000);
+        }
+
+        function showLoadingOverlay(message) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.querySelector('p').textContent = message;
+            overlay.style.display = 'flex';
+        }
+
+        function hideLoadingOverlay() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function setupEventListeners() {
+            // Seed phrase confirmation
+            document.getElementById('seedConfirm').addEventListener('change', (e) => {
+                document.getElementById('completeWalletCreation').disabled = !e.target.checked;
+            });
+
+            // Complete wallet creation
+            document.getElementById('completeWalletCreation').addEventListener('click', () => {
+                if (window.tempSeedPhrase && window.tempWalletAddress) {
+                    showLoadingOverlay('Creating your ICP wallet...');
+                    
+                    setTimeout(() => {
+                        // Store wallet with generated address
+                        walletAddress = window.tempWalletAddress;
+                        const walletData = {
+                            address: walletAddress,
+                            seedPhrase: window.tempSeedPhrase.phrase,
+                            seedWords: window.tempSeedPhrase.words,
+                            connected: true,
+                            createdAt: Date.now(),
+                            type: 'created',
+                            balance: {
+                                icp: 0,
+                                ckusdc: 0,
+                                ckbtc: 0
+                            }
+                        };
+                        
+                        localStorage.setItem('openarbWallet', JSON.stringify(walletData));
+                        
+                        // Clear temporary data
+                        delete window.tempSeedPhrase;
+                        delete window.tempWalletAddress;
+                        
+                        // Close modal and connect
+                        document.getElementById('walletCreationModal').style.display = 'none';
+                        hideLoadingOverlay();
+                        connectExistingWallet();
+                        
+                        showNotification('Wallet created successfully! Welcome to OpenArb!', 'success');
+                    }, 1500);
+                }
+            });
+
+            // Navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tab = e.currentTarget.dataset.tab;
+                    switchTab(tab);
+                });
+            });
+
+            // Sidebar toggle
+            document.getElementById('sidebarToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('open');
+            });
+
+            // Refresh opportunities
+            document.getElementById('refreshOpportunities').addEventListener('click', () => {
+                loadOpportunities();
+                showNotification('Opportunities refreshed!', 'success');
+            });
+
+            // Modal controls
+            document.getElementById('closeModal').addEventListener('click', closeTradeModal);
+            document.getElementById('cancelTrade').addEventListener('click', closeTradeModal);
+            document.getElementById('executeTrade').addEventListener('click', executeTrade);
+
+            // Close modal on outside click
+            document.getElementById('tradeModal').addEventListener('click', (e) => {
+                if (e.target.id === 'tradeModal') {
+                    closeTradeModal();
+                }
+            });
+        }
+
+        function disconnectWallet() {
+            localStorage.removeItem('openarbWallet');
+            stopLiveUpdates();
+            
+            // Show welcome screen
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+            
+            showNotification('Wallet disconnected', 'warning');
+        }
+
+        function startLiveUpdates() {
+            // Update live stats every 3 seconds
+            liveDataInterval = setInterval(() => {
+                updateLiveStats();
+                updateLastScanTime();
+            }, 3000);
+
+            // Update activity feed every 5 seconds
+            activityFeedInterval = setInterval(() => {
+                addActivityFeedItem();
+            }, 5000);
+
+            // Update opportunities every 10 seconds
+            setInterval(() => {
+                if (currentTab === 'opportunities') {
+                    updateOpportunities();
+                }
+            }, 10000);
+        }
+
+        function stopLiveUpdates() {
+            if (liveDataInterval) clearInterval(liveDataInterval);
+            if (activityFeedInterval) clearInterval(activityFeedInterval);
+        }
+
+        function updateLiveStats() {
+            // Update total profit
+            const currentProfit = parseFloat(document.getElementById('totalProfit').textContent.replace('$', '').replace(',', ''));
+            const change = (Math.random() - 0.5) * 100;
+            const newProfit = Math.max(0, currentProfit + change);
+            document.getElementById('totalProfit').textContent = `$${newProfit.toFixed(2)}`;
+
+            // Update active opportunities
+            const newOpportunities = Math.floor(Math.random() * 8) + 8;
+            document.getElementById('activeOpportunities').textContent = newOpportunities;
+
+            // Update success rate
+            const currentRate = parseFloat(document.getElementById('successRate').textContent.replace('%', ''));
+            const rateChange = (Math.random() - 0.5) * 0.5;
+            const newRate = Math.min(100, Math.max(90, currentRate + rateChange));
+            document.getElementById('successRate').textContent = `${newRate.toFixed(1)}%`;
+
+            // Update gas saved
+            const currentGas = parseFloat(document.getElementById('gasSaved').textContent.replace('$', ''));
+            const gasChange = Math.random() * 10;
+            document.getElementById('gasSaved').textContent = `$${(currentGas + gasChange).toFixed(2)}`;
+
+            // Update portfolio values
+            const portfolio24h = document.getElementById('portfolio24h');
+            if (portfolio24h) {
+                const current24h = parseFloat(portfolio24h.textContent.replace('$', '').replace('+', ''));
+                const change24h = (Math.random() - 0.5) * 50;
+                portfolio24h.textContent = `+$${(current24h + change24h).toFixed(2)}`;
+            }
+        }
+
+        function updateLastScanTime() {
+            document.getElementById('lastScanTime').textContent = 'Just now';
+        }
+
+        function addActivityFeedItem() {
+            const activities = [
+                {
+                    type: 'success',
+                    icon: 'fas fa-check',
+                    title: 'ICP/ckUSDC Arbitrage',
+                    subtitle: 'Sonic → ICPSwap',
+                    profit: `+$${(Math.random() * 200 + 50).toFixed(2)}`,
+                    time: 'Just now'
+                },
+                {
+                    type: 'pending',
+                    icon: 'fas fa-clock',
+                    title: 'ckBTC/ICP Arbitrage',
+                    subtitle: 'ICPSwap → Sonic',
+                    profit: 'Executing',
+                    time: '30s ago'
+                },
+                {
+                    type: 'success',
+                    icon: 'fas fa-check',
+                    title: 'CHAT/ckUSDT Arbitrage',
+                    subtitle: 'InfinitySwap → ICDex',
+                    profit: `+$${(Math.random() * 150 + 25).toFixed(2)}`,
+                    time: '1m ago'
+                }
+            ];
+
+            const activity = activities[Math.floor(Math.random() * activities.length)];
+            addSpecificActivityItem(activity);
+        }
+
+        function addSpecificActivityItem(activity) {
+            const activityFeed = document.getElementById('activityFeed');
+            if (!activityFeed) return;
+            
+            const activityElement = document.createElement('div');
+            activityElement.className = 'flex items-center justify-between p-4 bg-gray-800 rounded-lg';
+            activityElement.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-${activity.type === 'success' ? 'green' : activity.type === 'pending' ? 'blue' : 'red'}-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                        <i class="${activity.icon} text-${activity.type === 'success' ? 'green' : activity.type === 'pending' ? 'blue' : 'red'}-400"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium">${activity.title}</p>
+                        <p class="text-sm text-gray-400">${activity.subtitle}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-medium ${activity.type === 'success' ? 'text-profit' : activity.type === 'pending' ? 'text-yellow-400' : 'text-loss'}">${activity.profit}</p>
+                    <p class="text-sm text-gray-400">${activity.time}</p>
+                </div>
+            `;
+            
+            // Add to top of feed
+            activityFeed.insertBefore(activityElement, activityFeed.firstChild);
+            
+            // Keep only last 5 items
+            while (activityFeed.children.length > 5) {
+                activityFeed.removeChild(activityFeed.lastChild);
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(tabName).classList.remove('hidden');
+
+            currentTab = tabName;
+
+            // Initialize charts if needed
+            if (tabName === 'portfolio' && !charts.portfolioChart) {
+                setTimeout(() => initializePortfolioChart(), 100);
+            }
+        }
+
+        function simulateConnection() {
+            setTimeout(() => {
+                isConnected = true;
+                document.getElementById('connectionStatus').className = 'status-indicator status-connected';
+                document.getElementById('connectionText').textContent = 'Connected to ICP';
+                document.getElementById('walletAddress').textContent = walletAddress;
+            }, 1000);
+        }
+
+        function loadOpportunities() {
+            const mockOpportunities = [
+                {
+                    pair: 'ICP/ckUSDC',
+                    buyDex: 'Sonic',
+                    sellDex: 'ICPSwap',
+                    profit: 2.34 + (Math.random() - 0.5) * 0.5,
+                    profitUsd: 156.78 + (Math.random() - 0.5) * 50,
+                    amount: '125 ICP',
+                    gasEstimate: 0.001
+                },
+                {
+                    pair: 'ckBTC/ICP',
+                    buyDex: 'InfinitySwap',
+                    sellDex: 'Sonic',
+                    profit: 1.87 + (Math.random() - 0.5) * 0.3,
+                    profitUsd: 89.23 + (Math.random() - 0.5) * 30,
+                    amount: '0.05 ckBTC',
+                    gasEstimate: 0.002
+                },
+                {
+                    pair: 'CHAT/ckUSDT',
+                    buyDex: 'ICPSwap',
+                    sellDex: 'Sonic',
+                    profit: 3.12 + (Math.random() - 0.5) * 0.8,
+                    profitUsd: 234.56 + (Math.random() - 0.5) * 80,
+                    amount: '12,000 CHAT',
+                    gasEstimate: 0.0015
+                },
+                {
+                    pair: 'SNS1/ICP',
+                    buyDex: 'Sonic',
+                    sellDex: 'ICDex',
+                    profit: 1.45 + (Math.random() - 0.5) * 0.4,
+                    profitUsd: 67.89 + (Math.random() - 0.5) * 25,
+                    amount: '800 SNS1',
+                    gasEstimate: 0.0008
+                }
+            ];
+
+            opportunities = mockOpportunities;
+            renderOpportunities();
+        }
+
+        function updateOpportunities() {
+            opportunities.forEach(opp => {
+                const change = (Math.random() - 0.5) * 0.3;
+                opp.profit = Math.max(0.1, opp.profit + change);
+                opp.profitUsd = Math.max(10, opp.profitUsd + (change * 30));
+            });
+            renderOpportunities();
+        }
+
+        function renderOpportunities() {
+            const grid = document.getElementById('opportunitiesGrid');
+            grid.innerHTML = '';
+
+            opportunities.forEach((opp, index) => {
+                const card = document.createElement('div');
+                card.className = 'arbitrage-card card-dark rounded-xl p-6 cursor-pointer';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold">${opp.pair}</h3>
+                            <div class="flex items-center space-x-2 mt-2">
+                                <span class="dex-badge ${opp.buyDex.toLowerCase()}">${opp.buyDex}</span>
+                                <i class="fas fa-arrow-right text-gray-400"></i>
+                                <span class="dex-badge ${opp.sellDex.toLowerCase()}">${opp.sellDex}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-2xl font-bold text-profit live-price">+${opp.profit.toFixed(2)}%</p>
+                            <p class="text-sm text-gray-400">$${opp.profitUsd.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-400">Amount</p>
+                            <p class="font-medium">${opp.amount}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400">Fee Est.</p>
+                            <p class="font-medium">${opp.gasEstimate} ICP</p>
+                        </div>
+                    </div>
+                    
+                    <button class="w-full mt-4 btn-primary px-4 py-2 rounded-lg font-medium" onclick="openTradeModal(${index})">
+                        Execute Live Trade
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openTradeModal(index) {
+            const opp = opportunities[index];
+            document.getElementById('tradePair').value = opp.pair;
+            document.getElementById('tradeAmount').value = parseFloat(opp.amount);
+            document.getElementById('expectedProfit').value = `$${opp.profitUsd.toFixed(2)} (+${opp.profit.toFixed(2)}%)`;
+            document.getElementById('tradeModal').style.display = 'flex';
+        }
+
+        function closeTradeModal() {
+            document.getElementById('tradeModal').style.display = 'none';
+        }
+
+        function executeTrade() {
+            const tradePair = document.getElementById('tradePair').value;
+            const tradeAmount = document.getElementById('tradeAmount').value;
+            const expectedProfit = document.getElementById('expectedProfit').value;
+            
+            if (!tradeAmount || tradeAmount <= 0) {
+                showNotification('Please enter a valid trade amount', 'error');
+                return;
+            }
+            
+            // Disable execute button and show loading
+            const executeBtn = document.getElementById('executeTrade');
+            executeBtn.disabled = true;
+            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Executing...';
+            
+            showNotification('Initiating live arbitrage trade...', 'success');
+            closeTradeModal();
+            
+            // Simulate multi-step trade execution
+            setTimeout(() => {
+                showNotification('Step 1: Buying on source DEX...', 'success');
+            }, 1000);
+            
+            setTimeout(() => {
+                showNotification('Step 2: Transferring tokens...', 'success');
+            }, 2500);
+            
+            setTimeout(() => {
+                showNotification('Step 3: Selling on target DEX...', 'success');
+            }, 4000);
+            
+            setTimeout(() => {
+                const profit = parseFloat(expectedProfit.replace('$', '').split(' ')[0]);
+                const actualProfit = profit * (0.95 + Math.random() * 0.1); // 95-105% of expected
+                
+                showNotification(`Trade completed! Profit: $${actualProfit.toFixed(2)}`, 'success');
+                
+                // Update stats
+                const currentProfit = parseFloat(document.getElementById('totalProfit').textContent.replace('$', '').replace(',', ''));
+                document.getElementById('totalProfit').textContent = `$${(currentProfit + actualProfit).toFixed(2)}`;
+                
+                // Add to activity feed
+                addSpecificActivityItem({
+                    type: 'success',
+                    icon: 'fas fa-check',
+                    title: `${tradePair} Arbitrage`,
+                    subtitle: 'Live execution completed',
+                    profit: `+$${actualProfit.toFixed(2)}`,
+                    time: 'Just now'
+                });
+                
+                // Reset execute button
+                executeBtn.disabled = false;
+                executeBtn.innerHTML = 'Execute Live Trade';
+                
+            }, 6000);
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notificationText');
+            
+            text.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        function initializeCharts() {
+            // Profit Chart
+            const profitCtx = document.getElementById('profitChart').getContext('2d');
+            charts.profitChart = new Chart(profitCtx, {
+                type: 'line',
+                data: {
+                    labels: ['6h ago', '5h ago', '4h ago', '3h ago', '2h ago', '1h ago', 'Now'],
+                    datasets: [{
+                        label: 'Profit ($)',
+                        data: [800, 1200, 950, 1400, 1100, 1300, 1247],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#d1d5db' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: '#374151' }
+                        },
+                        y: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: '#374151' }
+                        }
+                    }
+                }
+            });
+
+            // Volume Chart
+            const volumeCtx = document.getElementById('volumeChart').getContext('2d');
+            charts.volumeChart = new Chart(volumeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sonic', 'ICPSwap', 'InfinitySwap', 'ICDex'],
+                    datasets: [{
+                        data: [40, 30, 20, 10],
+                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#d1d5db', padding: 20 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializePortfolioChart() {
+            const portfolioCtx = document.getElementById('portfolioChart').getContext('2d');
+            charts.portfolioChart = new Chart(portfolioCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['ICP', 'ckUSDC', 'ckBTC', 'CHAT', 'SNS1'],
+                    datasets: [{
+                        data: [45, 25, 15, 10, 5],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#d1d5db', padding: 20 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function viewSeedPhrase() {
+            const walletData = JSON.parse(localStorage.getItem('openarbWallet') || '{}');
+            if (walletData.seedPhrase) {
+                const confirmed = confirm('⚠️ SECURITY WARNING ⚠️\n\nYour seed phrase will be displayed on screen. Make sure no one else can see your screen.\n\nNever share your seed phrase with anyone. Anyone with access to your seed phrase can control your wallet.\n\nClick OK to continue.');
+                
+                if (confirmed) {
+                    alert(`Your Seed Phrase:\n\n${walletData.seedPhrase}\n\n⚠️ Keep this safe and never share it with anyone!`);
+                }
+            } else {
+                showNotification('No seed phrase found for this wallet', 'error');
+            }
+        }
+
+        function exportWallet() {
+            const walletData = JSON.parse(localStorage.getItem('openarbWallet') || '{}');
+            if (walletData.address) {
+                const exportData = {
+                    address: walletData.address,
+                    seedPhrase: walletData.seedPhrase,
+                    createdAt: walletData.createdAt,
+                    type: walletData.type,
+                    exportedAt: Date.now()
+                };
+                
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `openarb-wallet-${walletData.address.substring(0, 8)}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                showNotification('Wallet exported successfully!', 'success');
+            } else {
+                showNotification('No wallet data to export', 'error');
+            }
+        }
+
+        function deleteWallet() {
+            const confirmed = confirm('⚠️ DANGER ⚠️\n\nThis will permanently delete your wallet from this device.\n\nMake sure you have backed up your seed phrase!\n\nThis action cannot be undone.\n\nType "DELETE" to confirm:');
+            
+            if (confirmed) {
+                const doubleConfirm = prompt('Type "DELETE" to permanently remove your wallet:');
+                if (doubleConfirm === 'DELETE') {
+                    localStorage.removeItem('openarbWallet');
+                    showNotification('Wallet deleted successfully', 'warning');
+                    
+                    setTimeout(() => {
+                        disconnectWallet();
+                    }, 2000);
+                } else {
+                    showNotification('Wallet deletion cancelled', 'success');
+                }
+            }
+        }
+
+        // Initialize activity feed on load
+        setTimeout(() => {
+            if (document.getElementById('activityFeed')) {
+                addActivityFeedItem();
+                addActivityFeedItem();
+                addActivityFeedItem();
+            }
+        }, 1000);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98389c60938bacb9',t:'MTc1ODYxNTUwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

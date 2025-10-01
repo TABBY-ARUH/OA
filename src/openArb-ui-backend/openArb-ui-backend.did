@@ -1,3 +1,212 @@
+// OpenArb - ICP Decentralized Arbitrage Trading Platform
+// Candid Interface Definition File (.did)
+// This file defines all the types and service methods for the OpenArb canister
+
+type Result = variant {
+  Ok: text;
+  Err: text;
+};
+
+// User and Authentication Types
+type UserId = principal;
+
+type UserProfile = record {
+  id: UserId;
+  wallet_address: text;
+  created_at: int;
+  total_profit: float64;
+  total_trades: nat;
+  success_rate: float64;
+  settings: UserSettings;
+};
+
+type UserSettings = record {
+  min_profit_threshold: float64;
+  max_trade_amount: float64;
+  auto_trade_enabled: bool;
+  notifications: NotificationSettings;
+};
+
+type NotificationSettings = record {
+  opportunities: bool;
+  trades: bool;
+  price_alerts: bool;
+};
+
+// Token and DEX Types
+type TokenSymbol = variant {
+  ICP;
+  ckBTC;
+  ckETH;
+  CHAT;
+  SNS1;
+  Other: text;
+};
+
+type DEXName = variant {
+  ICPSwap;
+  Sonic;
+  ICDex;
+  Other: text;
+};
+
+type TokenInfo = record {
+  symbol: TokenSymbol;
+  name: text;
+  canister_id: principal;
+  decimals: nat8;
+  fee: nat;
+};
+
+// Arbitrage Opportunity Types
+type ArbitrageOpportunity = record {
+  id: nat;
+  token: TokenSymbol;
+  buy_dex: DEXName;
+  sell_dex: DEXName;
+  buy_price: float64;
+  sell_price: float64;
+  profit_percentage: float64;
+  volume_available: float64;
+  last_updated: int;
+  estimated_gas_cost: float64;
+  min_trade_amount: float64;
+  max_trade_amount: float64;
+};
+
+type OpportunityFilter = record {
+  token: opt TokenSymbol;
+  min_profit: opt float64;
+  max_profit: opt float64;
+  min_volume: opt float64;
+  dex_pair: opt record { DEXName; DEXName };
+};
+
+// Trading Types
+type TradeStatus = variant {
+  Pending;
+  Executing;
+  Completed;
+  Failed: text;
+  Cancelled;
+};
+
+type TradeRequest = record {
+  opportunity_id: nat;
+  amount: float64;
+  max_slippage: float64;
+  deadline: opt int;
+};
+
+type Trade = record {
+  id: nat;
+  user_id: UserId;
+  opportunity_id: nat;
+  token: TokenSymbol;
+  buy_dex: DEXName;
+  sell_dex: DEXName;
+  amount: float64;
+  buy_price: float64;
+  sell_price: float64;
+  actual_profit: float64;
+  gas_cost: float64;
+  status: TradeStatus;
+  created_at: int;
+  completed_at: opt int;
+  transaction_hashes: vec text;
+};
+
+// Portfolio Types
+type TokenBalance = record {
+  token: TokenSymbol;
+  balance: float64;
+  usd_value: float64;
+  change_24h: float64;
+  last_updated: int;
+};
+
+type Portfolio = record {
+  user_id: UserId;
+  balances: vec TokenBalance;
+  total_value_usd: float64;
+  total_profit_loss: float64;
+  last_updated: int;
+};
+
+// Analytics Types
+type ProfitDataPoint = record {
+  timestamp: int;
+  cumulative_profit: float64;
+  daily_profit: float64;
+};
+
+type UserStats = record {
+  total_profit: float64;
+  total_trades: nat;
+  successful_trades: nat;
+  success_rate: float64;
+  average_profit_per_trade: float64;
+  best_trade_profit: float64;
+  worst_trade_loss: float64;
+  profit_history: vec ProfitDataPoint;
+};
+
+// Watchlist Types
+type WatchlistItem = record {
+  id: nat;
+  user_id: UserId;
+  token: TokenSymbol;
+  target_profit: float64;
+  created_at: int;
+  is_active: bool;
+};
+
+// Main Service Interface
 service : {
-    "greet": (text) -> (text) query;
+  // User Management
+  create_user_profile : (text) -> (Result);
+  get_user_profile : () -> (opt UserProfile) query;
+  update_user_settings : (UserSettings) -> (Result);
+  get_user_stats : () -> (opt UserStats) query;
+
+  // Arbitrage Opportunities
+  get_opportunities : (opt OpportunityFilter) -> (vec ArbitrageOpportunity) query;
+  get_opportunity_by_id : (nat) -> (opt ArbitrageOpportunity) query;
+  refresh_opportunities : () -> (nat);
+  subscribe_to_opportunities : (OpportunityFilter) -> (Result);
+
+  // Trading
+  execute_arbitrage : (TradeRequest) -> (Result);
+  get_trade_status : (nat) -> (opt Trade) query;
+  get_user_trades : (opt nat, opt nat) -> (vec Trade) query;
+  cancel_trade : (nat) -> (Result);
+
+  // Portfolio Management
+  get_portfolio : () -> (opt Portfolio) query;
+  refresh_portfolio : () -> (Result);
+  get_token_balance : (TokenSymbol) -> (opt TokenBalance) query;
+
+  // Watchlist
+  add_to_watchlist : (TokenSymbol, float64) -> (Result);
+  remove_from_watchlist : (nat) -> (Result);
+  get_watchlist : () -> (vec WatchlistItem) query;
+
+  // Token Information
+  get_supported_tokens : () -> (vec TokenInfo) query;
+  get_token_price : (TokenSymbol, DEXName) -> (opt float64) query;
+
+  // System Functions
+  get_system_status : () -> (record { 
+    is_active: bool; 
+    last_update: int; 
+    total_opportunities: nat;
+    total_users: nat;
+    total_volume_24h: float64;
+  }) query;
+  
+  // Admin Functions (restricted)
+  add_supported_token : (TokenInfo) -> (Result);
+  update_dex_config : (DEXName, text) -> (Result);
+  pause_system : () -> (Result);
+  resume_system : () -> (Result);
 }
