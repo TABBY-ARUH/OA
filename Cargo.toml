@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "src/openArb-ui-backend"
+    "src/openarb_frontend_backend"
 ]
 resolver = "2"

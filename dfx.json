@@ -1,29 +1,19 @@
 {
   "canisters": {
-    "openArb-ui-backend": {
-      "type": "rust",
-      "package": "openArb-ui-backend",
-      "candid": "src/openArb-ui-backend/openArb-ui-backend.did"
-    },
-    "openArb-ui-frontend": {
+    "openarb_frontend_assets": {
       "type": "assets",
-      "dependencies": [
-        "openArb-ui-backend"
-      ],
-      "source": [
-        "src/openArb-ui-frontend/dist"
-      ],
-      "build": [
-        "npm install --prefix src/openArb-ui-frontend",
-        "npm run build --prefix src/openArb-ui-frontend"
-      ]
+      "source": ["src/openarb_frontend_assets"]
     }
   },
-  "defaults": {
-    "build": {
-      "packtool": ""
+  "version": 1,
+  "dfx": "0.29.2",
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "type": "persistent"
     }
-  },
-  "output_env_file": ".env",
-  "version": 1
+  }
 }

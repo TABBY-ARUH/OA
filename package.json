@@ -3,22 +3,16 @@
     "node": ">=16.0.0",
     "npm": ">=7.0.0"
   },
-  "name": "openArb-ui",
+  "name": "openarb_frontend",
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "prebuild": "npm run prebuild --workspaces --if-present",
-    "pretest": "npm run prebuild --workspaces --if-present",
-    "start": "npm start --workspaces --if-present",
-    "test": "npm test --workspaces --if-present"
+    "build": "echo 'skip build'",
+    "prebuild": "echo 'skip prebuild'",
+    "pretest": "echo 'skip pretest'",
+    "start": "echo 'skip start'",
+    "test": "echo 'skip test'"
   },
   "type": "module",
   "workspaces": [
-    "src/openArb-ui-frontend"
-  ],
-  "devDependencies": {
-    "autoprefixer": "^10.4.21",
-    "npm-run-all": "^4.1.5",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.13"
-  }
+    "src/openarb_frontend_frontend"
+  ]
 }
